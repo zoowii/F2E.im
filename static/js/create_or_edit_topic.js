@@ -10,7 +10,7 @@ $(function () {
         _.each(pictureKeys, function (pic) {
             console.log(pic);
             var text = "![" + pic['url'] + "](" + pic['url'] + ")";
-            $editor.html($editor.html() + text);
+            $editor.val($editor.val() + text);
         });
     };
     $('.upload-picture-btn').click(function (e) {

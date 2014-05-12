@@ -18,7 +18,11 @@ import random
 import string
 import hashlib
 import os
+import qiniu.conf
+import qiniu.rs
+import qiniu.io
 from easy_json import JSON
+import settings
 
 
 def encrypt_password(password, salt):
@@ -182,3 +186,55 @@ class Paginator(object):
         result += "<li>Total %d Page</li>" % total_pages
         result += "</ul>"
         return result
+
+
+qiniu.conf.ACCESS_KEY = safe_utf8(settings.qiniu['access_key'])
+qiniu.conf.SECRET_KEY = safe_utf8(settings.qiniu['secret_key'])
+
+policy = qiniu.rs.PutPolicy(safe_utf8(settings.qiniu['bucket']))
+uptoken = policy.token()
+
+default_mime_type = safe_utf8('application/octet-stream')
+
+
+def upload_binary_stream(key, data, mime_type=default_mime_type):
+    """
+    上传字符串或者二进制数据(readable)
+    """
+    key = safe_utf8(key)
+    extra = qiniu.io.PutExtra()
+    extra.mime_type = mime_type
+    ret, err = qiniu.io.put(uptoken, key, data, extra)
+    return ret, err
+
+
+def upload_file(key, filepath, mime_type=default_mime_type):
+    """
+    上传本地文件
+    """
+    key = safe_utf8(key)
+    filepath = safe_utf8(filepath)
+    extra = qiniu.io.PutExtra()
+    extra.mime_type = mime_type
+    print(key, filepath, type(key), type(filepath))
+    ret, err = qiniu.io.put_file(uptoken, key, filepath, extra)
+    return ret, err
+
+
+def get_public_url_by_key(key):
+    """
+    根据key获取访问url(当bucket是public时)
+    """
+    if not key.startswith('/'):
+        key = '/%s' % key
+    return 'http://%s%s' % (settings.qiniu['domain'], key)
+
+
+def get_private_url_by_key(key):
+    """
+    根据key获取访问url(当bucket是private时)
+    """
+    key = safe_utf8(key)
+    base_url = qiniu.rs.make_base_url(safe_utf8(settings.qiniu['domain']), key)
+    get_policy = qiniu.rs.GetPolicy()
+    return get_policy.make_request(base_url)

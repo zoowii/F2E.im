@@ -4,7 +4,7 @@ import logging
 
 from celery import Celery
 
-from lib import qiniu_util, utils
+from lib import utils
 
 
 celery = Celery("tasks", broker="amqp://guest:guest@localhost:5672")
@@ -20,7 +20,7 @@ def upload_pictures(files, user):
         filename = file.get('filename')
         body = file.get('body')
         key = utils.random_str(30)
-        ret, err = qiniu_util.upload_binary_stream(key, body, content_type)
+        ret, err = utils.upload_binary_stream(key, body, content_type)
         if err:
             logging.log(logging.ERROR, err)
             print(err)
